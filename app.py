@@ -1,6 +1,8 @@
 import time
+import threading
+import webbrowser
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
 from agents.input_agent import InputAgent
@@ -8,34 +10,137 @@ from agents.research_agent import ResearchAgent
 
 
 # =============================================================
-# FLASK APPLICATION
+# DESIGNFORGE APPLICATION
 # =============================================================
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder="templates",
+    static_folder="static"
+)
 
-# Allow the frontend to communicate with Flask
+# Allow frontend requests to communicate with the Flask API.
 CORS(app)
+
+
+# =============================================================
+# APPLICATION CONFIGURATION
+# =============================================================
+
+app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024
 
 
 # =============================================================
 # INITIALIZE SERVICES
 # =============================================================
 
-try:
+input_agent = None
+research_agent = None
 
-    input_agent = InputAgent()
-    research_agent = ResearchAgent()
+services_initialized = False
+initialization_error = None
 
-    print("\n[DesignForge] Services initialized successfully.")
 
-except Exception as e:
+def initialize_services():
+    """
+    Initialize the DesignForge AI services.
 
-    print(
-        f"\n[DesignForge] Failed to initialize services: {e}"
-    )
+    Architecture:
 
-    input_agent = None
-    research_agent = None
+        Frontend
+            ↓
+        Flask
+            ↓
+        InputAgent
+            ↓
+        DesignRequirements
+            ↓
+        ResearchAgent
+            ↓
+        ResearchPlan
+            ↓
+        Pexels / Filtering
+            ↓
+        Final JSON
+            ↓
+        Frontend
+    """
+
+    global input_agent
+    global research_agent
+    global services_initialized
+    global initialization_error
+
+    print()
+    print("=" * 70)
+    print("DESIGNFORGE SERVICE INITIALIZATION")
+    print("=" * 70)
+
+    try:
+
+        print()
+        print("[DesignForge] Initializing InputAgent...")
+
+        input_agent = InputAgent()
+
+        print(
+            "[DesignForge] InputAgent initialized successfully."
+        )
+
+        print()
+        print("[DesignForge] Initializing ResearchAgent...")
+
+        research_agent = ResearchAgent()
+
+        print(
+            "[DesignForge] ResearchAgent initialized successfully."
+        )
+
+        services_initialized = True
+        initialization_error = None
+
+        print()
+        print(
+            "[DesignForge] Services initialized successfully."
+        )
+
+    except Exception as e:
+
+        input_agent = None
+        research_agent = None
+
+        services_initialized = False
+        initialization_error = str(e)
+
+        print()
+        print(
+            "[DesignForge] Service initialization failed."
+        )
+
+        print(
+            f"[DesignForge] Error: {e}"
+        )
+
+
+# Initialize the AI services when app.py starts.
+initialize_services()
+
+
+# =============================================================
+# FRONTEND ROUTE
+# =============================================================
+
+@app.route("/", methods=["GET"])
+def home():
+    """
+    Render the DesignForge frontend.
+
+    Flask looks for:
+
+        templates/index.html
+    """
+
+    return render_template("index.html")
 
 
 # =============================================================
@@ -45,27 +150,58 @@ except Exception as e:
 @app.route("/api/health", methods=["GET"])
 def health_check():
     """
-    Check whether the DesignForge backend is running.
+    Check whether DesignForge is operational.
     """
 
+    if services_initialized:
+
+        return jsonify({
+            "status": "ok",
+            "service": "DesignForge",
+
+            "agents": {
+                "input_agent": input_agent is not None,
+                "research_agent": research_agent is not None
+            }
+        })
+
     return jsonify({
-        "status": "ok",
+        "status": "degraded",
         "service": "DesignForge",
+
         "agents": {
             "input_agent": input_agent is not None,
             "research_agent": research_agent is not None
-        }
+        },
+
+        "error": initialization_error
+    }), 503
+
+
+# =============================================================
+# API TEST
+# =============================================================
+
+@app.route("/api/test", methods=["GET"])
+def test_endpoint():
+    """
+    Simple API connectivity test.
+    """
+
+    return jsonify({
+        "success": True,
+        "message": "DesignForge API is running."
     })
 
 
 # =============================================================
-# MAIN DESIGN RESEARCH ENDPOINT
+# MAIN DESIGN PIPELINE
 # =============================================================
 
 @app.route("/api/design", methods=["POST"])
 def create_design_research():
     """
-    Main DesignForge pipeline.
+    Main DesignForge design research pipeline.
 
     Expected request:
 
@@ -75,55 +211,114 @@ def create_design_research():
 
     Pipeline:
 
-        User Input
-             ↓
+        User
+          ↓
+        index.html
+          ↓
+        script.js
+          ↓
+        POST /api/design
+          ↓
         InputAgent
-             ↓
+          ↓
         DesignRequirements
-             ↓
+          ↓
         ResearchAgent
-             ↓
+          ↓
         ResearchPlan
-             ↓
+          ↓
         PexelsService
-             ↓
+          ↓
         FilterService
-             ↓
-        Final Research Result
+          ↓
+        JSON response
+          ↓
+        script.js
+          ↓
+        DesignForge UI
     """
 
     start_time = time.perf_counter()
 
-    # ---------------------------------------------------------
-    # Check Services
-    # ---------------------------------------------------------
+    print()
+    print("=" * 70)
+    print("[DesignForge] NEW DESIGN REQUEST")
+    print("=" * 70)
+
+    # =========================================================
+    # CHECK SERVICES
+    # =========================================================
 
     if input_agent is None or research_agent is None:
 
+        print(
+            "[DesignForge] Services are not initialized."
+        )
+
         return jsonify({
             "success": False,
-            "error": "DesignForge services are not initialized."
+            "stage": "initialization",
+            "error": (
+                "DesignForge services are not initialized."
+            )
         }), 500
 
-    # ---------------------------------------------------------
-    # Validate Request
-    # ---------------------------------------------------------
+    # =========================================================
+    # VALIDATE REQUEST CONTENT TYPE
+    # =========================================================
 
     if not request.is_json:
 
+        print(
+            "[DesignForge] Request rejected: "
+            "JSON body required."
+        )
+
         return jsonify({
             "success": False,
-            "error": "Request must contain JSON data."
+            "stage": "request_validation",
+            "error": (
+                "Request must contain JSON data."
+            )
         }), 400
 
-    data = request.get_json()
+    # =========================================================
+    # READ JSON
+    # =========================================================
+
+    try:
+
+        data = request.get_json()
+
+    except Exception as e:
+
+        print(
+            f"[DesignForge] Invalid JSON: {e}"
+        )
+
+        return jsonify({
+            "success": False,
+            "stage": "request_validation",
+            "error": "Invalid JSON request body."
+        }), 400
+
+    # =========================================================
+    # VALIDATE JSON OBJECT
+    # =========================================================
 
     if not isinstance(data, dict):
 
         return jsonify({
             "success": False,
-            "error": "Request body must be a JSON object."
+            "stage": "request_validation",
+            "error": (
+                "Request body must be a JSON object."
+            )
         }), 400
+
+    # =========================================================
+    # GET USER PROMPT
+    # =========================================================
 
     user_input = data.get("prompt")
 
@@ -131,7 +326,10 @@ def create_design_research():
 
         return jsonify({
             "success": False,
-            "error": "The 'prompt' field must be a string."
+            "stage": "request_validation",
+            "error": (
+                "The 'prompt' field must be a string."
+            )
         }), 400
 
     user_input = user_input.strip()
@@ -140,31 +338,33 @@ def create_design_research():
 
         return jsonify({
             "success": False,
-            "error": "Design prompt cannot be empty."
+            "stage": "request_validation",
+            "error": (
+                "Design prompt cannot be empty."
+            )
         }), 400
 
-    # ---------------------------------------------------------
-    # STEP 1
-    # InputAgent
-    # ---------------------------------------------------------
+    # =========================================================
+    # LOG USER REQUEST
+    # =========================================================
+
+    print()
+    print("[DesignForge] User request:")
+    print(user_input)
+
+    # =========================================================
+    # STEP 1 — INPUT AGENT
+    # =========================================================
+
+    print()
+    print(
+        "[DesignForge] Step 1: "
+        "Analyzing user input..."
+    )
+
+    input_start = time.perf_counter()
 
     try:
-
-        print("\n" + "=" * 70)
-        print("[DesignForge] NEW DESIGN REQUEST")
-        print("=" * 70)
-
-        print(
-            f"\n[DesignForge] User request:\n"
-            f"{user_input}"
-        )
-
-        print(
-            "\n[DesignForge] "
-            "Step 1: Analyzing user input..."
-        )
-
-        input_start = time.perf_counter()
 
         design_requirements = (
             input_agent.analyze_input(
@@ -178,38 +378,85 @@ def create_design_research():
         )
 
         print(
-            "[DesignForge] "
-            f"Input analysis complete "
+            "[DesignForge] Input analysis complete "
             f"({input_time:.2f}s)."
         )
 
     except Exception as e:
 
+        input_time = (
+            time.perf_counter()
+            - input_start
+        )
+
+        total_time = (
+            time.perf_counter()
+            - start_time
+        )
+
+        print()
         print(
-            f"[DesignForge] "
-            f"InputAgent failed: {e}"
+            "[DesignForge] InputAgent failed:"
+        )
+
+        print(
+            f"[DesignForge] {e}"
         )
 
         return jsonify({
             "success": False,
             "stage": "input_agent",
-            "error": str(e)
+            "error": str(e),
+
+            "timing": {
+                "input_agent_seconds": round(
+                    input_time,
+                    2
+                ),
+
+                "total_seconds": round(
+                    total_time,
+                    2
+                )
+            }
         }), 500
 
-    # ---------------------------------------------------------
-    # STEP 2
-    # ResearchAgent
-    # ---------------------------------------------------------
+    # =========================================================
+    # VALIDATE INPUT AGENT RESULT
+    # =========================================================
 
-    try:
+    if not isinstance(
+        design_requirements,
+        dict
+    ):
 
         print(
-            "\n[DesignForge] "
-            "Step 2: Creating research plan "
-            "and researching references..."
+            "[DesignForge] InputAgent returned "
+            "invalid data."
         )
 
-        research_start = time.perf_counter()
+        return jsonify({
+            "success": False,
+            "stage": "input_agent",
+            "error": (
+                "InputAgent returned invalid data."
+            )
+        }), 500
+
+    # =========================================================
+    # STEP 2 — RESEARCH AGENT
+    # =========================================================
+
+    print()
+    print(
+        "[DesignForge] Step 2: "
+        "Creating research plan "
+        "and researching references..."
+    )
+
+    research_start = time.perf_counter()
+
+    try:
 
         research_result = (
             research_agent.research(
@@ -223,46 +470,84 @@ def create_design_research():
         )
 
         print(
-            "[DesignForge] "
-            f"Research pipeline complete "
-            f"({research_time:.2f}s)."
+            "[DesignForge] Research pipeline "
+            f"complete ({research_time:.2f}s)."
         )
 
     except Exception as e:
 
+        research_time = (
+            time.perf_counter()
+            - research_start
+        )
+
+        total_time = (
+            time.perf_counter()
+            - start_time
+        )
+
+        print()
         print(
-            f"[DesignForge] "
-            f"ResearchAgent failed: {e}"
+            "[DesignForge] ResearchAgent failed:"
+        )
+
+        print(
+            f"[DesignForge] {e}"
         )
 
         return jsonify({
             "success": False,
             "stage": "research_agent",
-            "error": str(e)
+            "error": str(e),
+
+            "timing": {
+                "input_agent_seconds": round(
+                    input_time,
+                    2
+                ),
+
+                "research_pipeline_seconds": round(
+                    research_time,
+                    2
+                ),
+
+                "total_seconds": round(
+                    total_time,
+                    2
+                )
+            }
         }), 500
 
-    # ---------------------------------------------------------
-    # STEP 3
-    # Validate Research Result
-    # ---------------------------------------------------------
+    # =========================================================
+    # VALIDATE RESEARCH RESULT
+    # =========================================================
 
     if not isinstance(
         research_result,
         dict
     ):
 
+        print(
+            "[DesignForge] ResearchAgent returned "
+            "invalid data."
+        )
+
         return jsonify({
             "success": False,
             "stage": "research_agent",
-            "error": "ResearchAgent returned invalid data."
+            "error": (
+                "ResearchAgent returned invalid data."
+            )
         }), 500
 
-    research_plan = research_result.get(
-        "research_plan"
-    )
+    # =========================================================
+    # GET RESEARCH PLAN
+    # =========================================================
 
-    image_results = research_result.get(
-        "image_results"
+    research_plan = (
+        research_result.get(
+            "research_plan"
+        )
     )
 
     if not isinstance(
@@ -270,98 +555,191 @@ def create_design_research():
         dict
     ):
 
+        print(
+            "[DesignForge] ResearchPlan is missing."
+        )
+
         return jsonify({
             "success": False,
             "stage": "research_agent",
-            "error": "ResearchPlan is missing."
+            "error": (
+                "ResearchPlan is missing."
+            )
         }), 500
+
+    # =========================================================
+    # GET IMAGE RESULTS
+    # =========================================================
+
+    image_results = (
+        research_result.get(
+            "image_results"
+        )
+    )
 
     if not isinstance(
         image_results,
         dict
     ):
 
+        print(
+            "[DesignForge] Image results are missing."
+        )
+
         return jsonify({
             "success": False,
             "stage": "research_agent",
-            "error": "Image results are missing."
+            "error": (
+                "Image results are missing."
+            )
         }), 500
 
-    # ---------------------------------------------------------
-    # STEP 4
-    # Extract Result Statistics
-    # ---------------------------------------------------------
+    # =========================================================
+    # EXTRACT RAW RESULTS
+    # =========================================================
 
-    raw_results = image_results.get(
-        "raw_results",
-        {}
+    raw_results = (
+        image_results.get(
+            "raw_results",
+            {}
+        )
     )
 
-    filtered_results = image_results.get(
-        "filtered_results",
-        {}
+    if not isinstance(
+        raw_results,
+        dict
+    ):
+
+        raw_results = {}
+
+    # =========================================================
+    # EXTRACT FILTERED RESULTS
+    # =========================================================
+
+    filtered_results = (
+        image_results.get(
+            "filtered_results",
+            {}
+        )
     )
 
-    raw_count = raw_results.get(
-        "total_results",
-        0
+    if not isinstance(
+        filtered_results,
+        dict
+    ):
+
+        filtered_results = {}
+
+    # =========================================================
+    # STATISTICS
+    # =========================================================
+
+    raw_count = (
+        raw_results.get(
+            "total_results",
+            0
+        )
     )
 
-    filtered_count = filtered_results.get(
-        "total_after_filtering",
-        0
+    filtered_count = (
+        filtered_results.get(
+            "total_after_filtering",
+            0
+        )
     )
 
-    removed_count = filtered_results.get(
-        "total_removed",
-        0
+    removed_count = (
+        filtered_results.get(
+            "total_removed",
+            0
+        )
     )
 
-    # ---------------------------------------------------------
-    # STEP 5
-    # Total Pipeline Time
-    # ---------------------------------------------------------
+    # Keep statistics JSON-safe.
+    if not isinstance(
+        raw_count,
+        (int, float)
+    ):
+
+        raw_count = 0
+
+    if not isinstance(
+        filtered_count,
+        (int, float)
+    ):
+
+        filtered_count = 0
+
+    if not isinstance(
+        removed_count,
+        (int, float)
+    ):
+
+        removed_count = 0
+
+    # =========================================================
+    # TOTAL PIPELINE TIME
+    # =========================================================
 
     total_time = (
         time.perf_counter()
         - start_time
     )
 
+    # =========================================================
+    # LOG RESULTS
+    # =========================================================
+
+    print()
+    print("=" * 70)
+
     print(
-        "\n[DesignForge] "
+        "[DesignForge] "
         "Pipeline completed successfully."
     )
 
     print(
-        f"[DesignForge] "
-        f"Raw images: {raw_count}"
+        f"[DesignForge] Raw images: "
+        f"{raw_count}"
     )
 
     print(
-        f"[DesignForge] "
-        f"Filtered images: {filtered_count}"
+        f"[DesignForge] Filtered images: "
+        f"{filtered_count}"
     )
 
     print(
-        f"[DesignForge] "
-        f"Removed images: {removed_count}"
+        f"[DesignForge] Removed images: "
+        f"{removed_count}"
     )
 
     print(
-        f"[DesignForge] "
-        f"Total time: {total_time:.2f}s"
+        f"[DesignForge] Input Agent: "
+        f"{input_time:.2f}s"
     )
 
-    # ---------------------------------------------------------
-    # STEP 6
-    # Return Result to Frontend
-    # ---------------------------------------------------------
+    print(
+        f"[DesignForge] Research Pipeline: "
+        f"{research_time:.2f}s"
+    )
+
+    print(
+        f"[DesignForge] TOTAL: "
+        f"{total_time:.2f}s"
+    )
+
+    print("=" * 70)
+
+    # =========================================================
+    # FINAL RESPONSE
+    # =========================================================
 
     return jsonify({
 
         "success": True,
 
         "timing": {
+
             "input_agent_seconds": round(
                 input_time,
                 2
@@ -396,57 +774,77 @@ def create_design_research():
         "statistics": {
 
             "raw_images":
-                raw_count,
+                int(raw_count),
 
             "filtered_images":
-                filtered_count,
+                int(filtered_count),
 
             "removed_images":
-                removed_count
+                int(removed_count)
         }
     })
 
 
 # =============================================================
-# SIMPLE DEVELOPMENT TEST
-# =============================================================
-
-@app.route("/api/test", methods=["GET"])
-def test_endpoint():
-    """
-    Simple endpoint for checking that Flask routes work.
-    """
-
-    return jsonify({
-        "success": True,
-        "message": "DesignForge API is running."
-    })
-
-
-# =============================================================
-# ERROR HANDLERS
+# 404 HANDLER
 # =============================================================
 
 @app.errorhandler(404)
 def not_found(error):
 
-    return jsonify({
-        "success": False,
-        "error": "Endpoint not found."
-    }), 404
+    if request.path.startswith("/api/"):
 
+        return jsonify({
+            "success": False,
+            "error": "API endpoint not found.",
+            "path": request.path
+        }), 404
+
+    # If someone accesses an unknown normal browser
+    # route, return the DesignForge frontend.
+    return render_template(
+        "index.html"
+    )
+
+
+# =============================================================
+# 405 HANDLER
+# =============================================================
 
 @app.errorhandler(405)
 def method_not_allowed(error):
 
     return jsonify({
         "success": False,
-        "error": "HTTP method not allowed."
+        "error": "HTTP method not allowed.",
+        "path": request.path
     }), 405
 
 
+# =============================================================
+# 413 HANDLER
+# =============================================================
+
+@app.errorhandler(413)
+def request_too_large(error):
+
+    return jsonify({
+        "success": False,
+        "error": "Request body is too large."
+    }), 413
+
+
+# =============================================================
+# 500 HANDLER
+# =============================================================
+
 @app.errorhandler(500)
 def internal_server_error(error):
+
+    print()
+    print(
+        f"[DesignForge] Internal server error: {error}"
+    )
 
     return jsonify({
         "success": False,
@@ -455,24 +853,82 @@ def internal_server_error(error):
 
 
 # =============================================================
+# AUTOMATIC BROWSER LAUNCH
+# =============================================================
+
+def open_browser():
+    """
+    Open the DesignForge frontend automatically
+    after Flask has started.
+    """
+
+    webbrowser.open(
+        "http://127.0.0.1:5000/"
+    )
+
+
+# =============================================================
 # RUN APPLICATION
 # =============================================================
 
 if __name__ == "__main__":
 
-    print("\n" + "=" * 70)
-    print("DESIGNFORGE BACKEND")
+    print()
+    print("=" * 70)
+    print("DESIGNFORGE")
     print("=" * 70)
 
-    print("\nAvailable endpoints:")
+    print()
+    print("FRONTEND")
+    print("  http://127.0.0.1:5000/")
+
+    print()
+    print("API ENDPOINTS")
     print("  GET  /api/health")
     print("  GET  /api/test")
     print("  POST /api/design")
 
-    print("\nStarting Flask server...\n")
+    print()
+    print("SERVICES")
 
+    print(
+        f"  Input Agent: "
+        f"{'READY' if input_agent else 'FAILED'}"
+    )
+
+    print(
+        f"  Research Agent: "
+        f"{'READY' if research_agent else 'FAILED'}"
+    )
+
+    if initialization_error:
+
+        print()
+        print("INITIALIZATION ERROR")
+        print(
+            f"  {initialization_error}"
+        )
+
+    print()
+    print("Starting DesignForge...")
+    print("=" * 70)
+    print()
+
+    # Open the browser shortly after Flask starts.
+    # The small delay prevents the browser from trying to
+    # connect before the Flask development server is ready.
+    threading.Timer(
+        1.0,
+        open_browser
+    ).start()
+
+    # IMPORTANT:
+    # use_reloader=False prevents Flask from launching the
+    # application a second time and initializing your AI
+    # services twice.
     app.run(
         host="127.0.0.1",
         port=5000,
-        debug=True
+        debug=True,
+        use_reloader=False
     )
