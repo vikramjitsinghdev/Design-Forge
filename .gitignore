@@ -8,3 +8,8 @@ __pycache__/
 test_pexel.py
 test_research.py
 test_pipeline.py
+test_database.py
+
+#database files
+database.db
+user_database.db

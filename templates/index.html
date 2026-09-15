@@ -1,980 +1,1554 @@
 <!DOCTYPE html>
-
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-```
-<title>DesignForge — AI Design Research</title>
+    <title>DesignForge — AI Design Research</title>
 
-<meta
-    name="description"
-    content="DesignForge transforms natural-language design ideas into structured design requirements and visual research."
->
+    <meta
+        name="description"
+        content="DesignForge transforms natural-language design ideas into structured design requirements and visual research."
+    >
 
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    >
 
-<style>
-    :root {
-        --bg: #0b0d0c;
-        --surface: #111513;
-        --surface-2: #171c19;
-        --surface-3: #1d2420;
-        --border: #29312c;
-        --text: #f1f4f1;
-        --muted: #9ba59e;
-        --accent: #b8d96b;
-        --accent-dark: #8fb544;
-        --danger: #ff7d7d;
-        --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-        --radius: 18px;
-    }
-
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }
-
-    html {
-        scroll-behavior: smooth;
-    }
-
-    body {
-        min-height: 100vh;
-        background:
-            radial-gradient(circle at 20% 0%, rgba(184, 217, 107, 0.08), transparent 32%),
-            radial-gradient(circle at 80% 20%, rgba(184, 217, 107, 0.05), transparent 28%),
-            var(--bg);
-        color: var(--text);
-        font-family: "Inter", system-ui, sans-serif;
-        line-height: 1.5;
-    }
-
-    button,
-    textarea {
-        font: inherit;
-    }
-
-    button {
-        cursor: pointer;
-    }
-
-    .app {
-        width: min(1400px, calc(100% - 40px));
-        margin: 0 auto;
-    }
-
-    /* =====================================================
-       HEADER
-       ===================================================== */
-
-    header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 28px 0;
-    }
-
-    .brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .brand-mark {
-        width: 38px;
-        height: 38px;
-        display: grid;
-        place-items: center;
-        border-radius: 11px;
-        background: var(--accent);
-        color: #10140c;
-        font-weight: 800;
-        font-size: 18px;
-    }
-
-    .brand-name {
-        font-size: 18px;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-    }
-
-    .status {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--muted);
-        font-size: 13px;
-    }
-
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--accent);
-        box-shadow: 0 0 12px rgba(184, 217, 107, 0.65);
-    }
-
-    /* =====================================================
-       HERO
-       ===================================================== */
-
-    .hero {
-        text-align: center;
-        padding: 70px 0 50px;
-        max-width: 900px;
-        margin: 0 auto;
-    }
-
-    .eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 12px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        color: var(--accent);
-        background: rgba(184, 217, 107, 0.04);
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-    }
-
-    .hero h1 {
-        margin-top: 22px;
-        font-size: clamp(42px, 7vw, 78px);
-        line-height: 0.98;
-        letter-spacing: -0.055em;
-    }
-
-    .hero h1 span {
-        color: var(--accent);
-    }
-
-    .hero p {
-        max-width: 680px;
-        margin: 22px auto 0;
-        color: var(--muted);
-        font-size: 17px;
-    }
-
-    /* =====================================================
-       PROMPT AREA
-       ===================================================== */
-
-    .prompt-card {
-        max-width: 920px;
-        margin: 0 auto;
-        padding: 10px;
-        background: rgba(17, 21, 19, 0.92);
-        border: 1px solid var(--border);
-        border-radius: 24px;
-        box-shadow: var(--shadow);
-    }
-
-    .prompt-card textarea {
-        width: 100%;
-        min-height: 155px;
-        padding: 22px;
-        resize: vertical;
-        border: 0;
-        outline: none;
-        background: transparent;
-        color: var(--text);
-        font-size: 16px;
-        line-height: 1.65;
-    }
-
-    .prompt-card textarea::placeholder {
-        color: #68736c;
-    }
-
-    .prompt-footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 15px;
-        padding: 8px 10px 10px;
-    }
-
-    .prompt-hint {
-        color: #68736c;
-        font-size: 12px;
-    }
-
-    .generate-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 9px;
-        min-width: 150px;
-        padding: 13px 20px;
-        border: 0;
-        border-radius: 12px;
-        background: var(--accent);
-        color: #10140c;
-        font-weight: 800;
-        transition: 0.2s ease;
-    }
-
-    .generate-btn:hover {
-        background: #c9e982;
-        transform: translateY(-1px);
-    }
-
-    .generate-btn:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-    /* =====================================================
-       EXAMPLES
-       ===================================================== */
-
-    .examples {
-        max-width: 920px;
-        margin: 18px auto 0;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 8px;
-    }
-
-    .example-btn {
-        padding: 8px 12px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        background: transparent;
-        color: var(--muted);
-        font-size: 12px;
-        transition: 0.2s ease;
-    }
-
-    .example-btn:hover {
-        border-color: var(--accent-dark);
-        color: var(--text);
-    }
-
-    /* =====================================================
-       LOADING
-       ===================================================== */
-
-    .loading {
-        display: none;
-        max-width: 920px;
-        margin: 40px auto;
-        padding: 30px;
-        text-align: center;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        background: var(--surface);
-    }
-
-    .loading.active {
-        display: block;
-    }
-
-    .spinner {
-        width: 34px;
-        height: 34px;
-        margin: 0 auto 15px;
-        border: 3px solid var(--border);
-        border-top-color: var(--accent);
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
+    <style>
+        :root {
+            --bg: #0b0d0c;
+            --surface: #111513;
+            --surface-2: #171c19;
+            --surface-3: #1d2420;
+            --border: #29312c;
+            --text: #f1f4f1;
+            --muted: #9ba59e;
+            --accent: #b8d96b;
+            --accent-dark: #8fb544;
+            --danger: #ff7d7d;
+            --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+            --radius: 18px;
         }
-    }
 
-    .loading-title {
-        font-weight: 700;
-    }
-
-    .loading-message {
-        margin-top: 5px;
-        color: var(--muted);
-        font-size: 13px;
-    }
-
-    /* =====================================================
-       ERROR
-       ===================================================== */
-
-    .error-box {
-        display: none;
-        max-width: 920px;
-        margin: 30px auto;
-        padding: 18px;
-        border: 1px solid rgba(255, 125, 125, 0.3);
-        border-radius: var(--radius);
-        background: rgba(255, 125, 125, 0.06);
-        color: var(--danger);
-    }
-
-    .error-box.active {
-        display: block;
-    }
-
-    /* =====================================================
-       RESULTS
-       ===================================================== */
-
-    .results {
-        display: none;
-        padding: 55px 0 80px;
-    }
-
-    .results.active {
-        display: block;
-    }
-
-    .results-header {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 20px;
-        margin-bottom: 25px;
-    }
-
-    .results-header h2 {
-        font-size: clamp(28px, 4vw, 42px);
-        letter-spacing: -0.04em;
-    }
-
-    .results-header p {
-        color: var(--muted);
-        margin-top: 6px;
-    }
-
-    .new-design-btn {
-        padding: 10px 15px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: var(--surface);
-        color: var(--text);
-    }
-
-    .new-design-btn:hover {
-        border-color: var(--accent-dark);
-    }
-
-    /* =====================================================
-       GRID / CARDS
-       ===================================================== */
-
-    .dashboard {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 18px;
-    }
-
-    .card {
-        padding: 22px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        background: linear-gradient(
-            145deg,
-            rgba(23, 28, 25, 0.98),
-            rgba(17, 21, 19, 0.98)
-        );
-    }
-
-    .card.full {
-        grid-column: 1 / -1;
-    }
-
-    .card-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 18px;
-    }
-
-    .card-title h3 {
-        font-size: 16px;
-    }
-
-    .card-label {
-        color: var(--accent);
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-    }
-
-    /* =====================================================
-       REQUIREMENTS
-       ===================================================== */
-
-    .requirement-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-
-    .requirement {
-        padding: 15px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.015);
-    }
-
-    .requirement-label {
-        color: var(--muted);
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-    }
-
-    .requirement-value {
-        margin-top: 5px;
-        font-weight: 600;
-    }
-
-    .tag-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 7px;
-        margin-top: 7px;
-    }
-
-    .tag {
-        display: inline-flex;
-        padding: 5px 9px;
-        border-radius: 7px;
-        background: var(--surface-3);
-        color: #d9dfda;
-        font-size: 12px;
-    }
-
-    .tag.excluded {
-        color: #ffaaaa;
-        background: rgba(255, 125, 125, 0.08);
-    }
-
-    /* =====================================================
-       RESEARCH
-       ===================================================== */
-
-    .research-objective {
-        color: #d8ded9;
-        line-height: 1.7;
-    }
-
-    .query-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-top: 12px;
-    }
-
-    .query {
-        padding: 10px 12px;
-        border-radius: 9px;
-        background: var(--surface-3);
-        color: #ccd4ce;
-        font-size: 13px;
-    }
-
-    /* =====================================================
-       IMAGES
-       ===================================================== */
-
-    .image-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-    }
-
-    .image-card {
-        position: relative;
-        aspect-ratio: 4 / 5;
-        overflow: hidden;
-        border-radius: 13px;
-        background: var(--surface-3);
-        border: 1px solid var(--border);
-    }
-
-    .image-card img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        transition: transform 0.35s ease;
-    }
-
-    .image-card:hover img {
-        transform: scale(1.04);
-    }
-
-    .image-overlay {
-        position: absolute;
-        inset: auto 0 0;
-        padding: 25px 10px 10px;
-        background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-        opacity: 0;
-        transition: 0.2s ease;
-    }
-
-    .image-card:hover .image-overlay {
-        opacity: 1;
-    }
-
-    .image-overlay a {
-        color: white;
-        font-size: 11px;
-        text-decoration: none;
-    }
-
-    .image-overlay a:hover {
-        color: var(--accent);
-    }
-
-    .no-images {
-        padding: 35px;
-        text-align: center;
-        color: var(--muted);
-    }
-
-    /* =====================================================
-       STATS
-       ===================================================== */
-
-    .stats {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 10px;
-    }
-
-    .stat {
-        padding: 15px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: var(--surface-2);
-    }
-
-    .stat-value {
-        font-size: 24px;
-        font-weight: 800;
-        letter-spacing: -0.03em;
-    }
-
-    .stat-label {
-        margin-top: 3px;
-        color: var(--muted);
-        font-size: 11px;
-    }
-
-    /* =====================================================
-       FOOTER
-       ===================================================== */
-
-    footer {
-        padding: 30px 0 45px;
-        text-align: center;
-        color: #657069;
-        font-size: 12px;
-    }
-
-    /* =====================================================
-       MODAL
-       ===================================================== */
-
-    .modal {
-        display: none;
-        position: fixed;
-        inset: 0;
-        z-index: 1000;
-        align-items: center;
-        justify-content: center;
-        padding: 25px;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(8px);
-    }
-
-    .modal.active {
-        display: flex;
-    }
-
-    .modal-content {
-        position: relative;
-        max-width: 900px;
-        max-height: 90vh;
-    }
-
-    .modal-content img {
-        display: block;
-        max-width: 100%;
-        max-height: 85vh;
-        border-radius: 14px;
-    }
-
-    .modal-close {
-        position: absolute;
-        top: -45px;
-        right: 0;
-        width: 34px;
-        height: 34px;
-        border: 1px solid var(--border);
-        border-radius: 50%;
-        background: var(--surface);
-        color: white;
-        font-size: 18px;
-    }
-
-    /* =====================================================
-       RESPONSIVE
-       ===================================================== */
-
-    @media (max-width: 1000px) {
-        .image-grid {
-            grid-template-columns: repeat(3, 1fr);
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-    }
 
-    @media (max-width: 760px) {
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(
+                    circle at 20% 0%,
+                    rgba(184, 217, 107, 0.08),
+                    transparent 32%
+                ),
+                radial-gradient(
+                    circle at 80% 20%,
+                    rgba(184, 217, 107, 0.05),
+                    transparent 28%
+                ),
+                var(--bg);
+            color: var(--text);
+            font-family: "Inter", system-ui, sans-serif;
+            line-height: 1.5;
+        }
+
+        button,
+        textarea,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
         .app {
-            width: min(100% - 24px, 680px);
+            width: min(1400px, calc(100% - 40px));
+            margin: 0 auto;
         }
+
+        /* =====================================================
+           SCENE SYSTEM
+           ===================================================== */
+
+        .scene {
+            display: none;
+        }
+
+        .scene.active {
+            display: block;
+        }
+
+        /* =====================================================
+           AUTH SCENES
+           ===================================================== */
+
+        .auth-scene {
+            min-height: 100vh;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+        }
+
+        .auth-scene.active {
+            display: flex;
+        }
+
+        .auth-wrapper {
+            width: 100%;
+            max-width: 460px;
+        }
+
+        .auth-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .auth-brand-mark {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 12px;
+            background: var(--accent);
+            color: #10140c;
+            font-weight: 800;
+            font-size: 20px;
+        }
+
+        .auth-brand-name {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .auth-card {
+            padding: 34px;
+            background: rgba(17, 21, 19, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .auth-label {
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .auth-header h1 {
+            margin-top: 10px;
+            font-size: 32px;
+            letter-spacing: -0.045em;
+        }
+
+        .auth-header p {
+            margin-top: 9px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 17px;
+        }
+
+        .auth-field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .auth-field label {
+            color: #dce2dd;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .auth-field input {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            outline: none;
+            background: var(--surface-2);
+            color: var(--text);
+            transition: 0.2s ease;
+        }
+
+        .auth-field input:focus {
+            border-color: var(--accent-dark);
+            box-shadow: 0 0 0 3px rgba(184, 217, 107, 0.07);
+        }
+
+        .auth-field input::placeholder {
+            color: #68736c;
+        }
+
+        .auth-message {
+            display: none;
+            padding: 11px 13px;
+            border: 1px solid rgba(255, 125, 125, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 125, 125, 0.06);
+            color: var(--danger);
+            font-size: 13px;
+        }
+
+        .auth-message.active {
+            display: block;
+        }
+
+        .auth-success {
+            border-color: rgba(184, 217, 107, 0.3);
+            background: rgba(184, 217, 107, 0.06);
+            color: var(--accent);
+        }
+
+        .auth-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 7px;
+        }
+
+        .auth-btn {
+            min-height: 46px;
+            padding: 11px 16px;
+            border-radius: 11px;
+            font-weight: 700;
+            transition: 0.2s ease;
+        }
+
+        .auth-btn-secondary {
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--text);
+        }
+
+        .auth-btn-secondary:hover {
+            border-color: var(--accent-dark);
+        }
+
+        .auth-btn-primary {
+            border: 1px solid var(--accent);
+            background: var(--accent);
+            color: #10140c;
+        }
+
+        .auth-btn-primary:hover {
+            background: #c9e982;
+            transform: translateY(-1px);
+        }
+
+        .auth-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .auth-footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #657069;
+            font-size: 11px;
+        }
+
+        /* =====================================================
+           HEADER
+           ===================================================== */
 
         header {
-            padding: 18px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 28px 0;
         }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            border-radius: 11px;
+            background: var(--accent);
+            color: #10140c;
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        .brand-name {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .welcome-user {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .logout-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: var(--surface);
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .logout-btn:hover {
+            color: var(--text);
+            border-color: var(--accent-dark);
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 12px rgba(184, 217, 107, 0.65);
+        }
+
+        /* =====================================================
+           HERO
+           ===================================================== */
 
         .hero {
-            padding: 50px 0 35px;
+            text-align: center;
+            padding: 70px 0 50px;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
-        .dashboard {
-            grid-template-columns: 1fr;
-        }
-
-        .card.full {
-            grid-column: auto;
-        }
-
-        .image-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .stats {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .results-header {
-            align-items: flex-start;
-            flex-direction: column;
-        }
-
-        .prompt-footer {
-            align-items: stretch;
-            flex-direction: column;
-        }
-
-        .generate-btn {
-            width: 100%;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .requirement-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .image-grid {
-            grid-template-columns: 1fr 1fr;
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            color: var(--accent);
+            background: rgba(184, 217, 107, 0.04);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
 
         .hero h1 {
-            font-size: 43px;
+            margin-top: 22px;
+            font-size: clamp(42px, 7vw, 78px);
+            line-height: 0.98;
+            letter-spacing: -0.055em;
         }
-    }
-</style>
-```
 
+        .hero h1 span {
+            color: var(--accent);
+        }
+
+        .hero p {
+            max-width: 680px;
+            margin: 22px auto 0;
+            color: var(--muted);
+            font-size: 17px;
+        }
+
+        /* =====================================================
+           PROMPT AREA
+           ===================================================== */
+
+        .prompt-card {
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 10px;
+            background: rgba(17, 21, 19, 0.92);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .prompt-card textarea {
+            width: 100%;
+            min-height: 155px;
+            padding: 22px;
+            resize: vertical;
+            border: 0;
+            outline: none;
+            background: transparent;
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.65;
+        }
+
+        .prompt-card textarea::placeholder {
+            color: #68736c;
+        }
+
+        .prompt-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 8px 10px 10px;
+        }
+
+        .prompt-hint {
+            color: #68736c;
+            font-size: 12px;
+        }
+
+        .generate-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            min-width: 150px;
+            padding: 13px 20px;
+            border: 0;
+            border-radius: 12px;
+            background: var(--accent);
+            color: #10140c;
+            font-weight: 800;
+            transition: 0.2s ease;
+        }
+
+        .generate-btn:hover {
+            background: #c9e982;
+            transform: translateY(-1px);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* =====================================================
+           EXAMPLES
+           ===================================================== */
+
+        .examples {
+            max-width: 920px;
+            margin: 18px auto 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .example-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: transparent;
+            color: var(--muted);
+            font-size: 12px;
+            transition: 0.2s ease;
+        }
+
+        .example-btn:hover {
+            border-color: var(--accent-dark);
+            color: var(--text);
+        }
+
+        /* =====================================================
+           LOADING
+           ===================================================== */
+
+        .loading {
+            display: none;
+            max-width: 920px;
+            margin: 40px auto;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 34px;
+            height: 34px;
+            margin: 0 auto 15px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-title {
+            font-weight: 700;
+        }
+
+        .loading-message {
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* =====================================================
+           ERROR
+           ===================================================== */
+
+        .error-box {
+            display: none;
+            max-width: 920px;
+            margin: 30px auto;
+            padding: 18px;
+            border: 1px solid rgba(255, 125, 125, 0.3);
+            border-radius: var(--radius);
+            background: rgba(255, 125, 125, 0.06);
+            color: var(--danger);
+        }
+
+        .error-box.active {
+            display: block;
+        }
+
+        /* =====================================================
+           RESULTS
+           ===================================================== */
+
+        .results {
+            display: none;
+            padding: 55px 0 80px;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .results-header h2 {
+            font-size: clamp(28px, 4vw, 42px);
+            letter-spacing: -0.04em;
+        }
+
+        .results-header p {
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .new-design-btn {
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        .new-design-btn:hover {
+            border-color: var(--accent-dark);
+        }
+
+        /* =====================================================
+           GRID / CARDS
+           ===================================================== */
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .card {
+            padding: 22px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: linear-gradient(
+                145deg,
+                rgba(23, 28, 25, 0.98),
+                rgba(17, 21, 19, 0.98)
+            );
+        }
+
+        .card.full {
+            grid-column: 1 / -1;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .card-title h3 {
+            font-size: 16px;
+        }
+
+        .card-label {
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        /* =====================================================
+           REQUIREMENTS
+           ===================================================== */
+
+        .requirement-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .requirement {
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .requirement-label {
+            color: var(--muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .requirement-value {
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 7px;
+        }
+
+        .tag {
+            display: inline-flex;
+            padding: 5px 9px;
+            border-radius: 7px;
+            background: var(--surface-3);
+            color: #d9dfda;
+            font-size: 12px;
+        }
+
+        .tag.excluded {
+            color: #ffaaaa;
+            background: rgba(255, 125, 125, 0.08);
+        }
+
+        /* =====================================================
+           RESEARCH
+           ===================================================== */
+
+        .research-objective {
+            color: #d8ded9;
+            line-height: 1.7;
+        }
+
+        .query-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .query {
+            padding: 10px 12px;
+            border-radius: 9px;
+            background: var(--surface-3);
+            color: #ccd4ce;
+            font-size: 13px;
+        }
+
+        /* =====================================================
+           IMAGES
+           ===================================================== */
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .image-card {
+            position: relative;
+            aspect-ratio: 4 / 5;
+            overflow: hidden;
+            border-radius: 13px;
+            background: var(--surface-3);
+            border: 1px solid var(--border);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.35s ease;
+        }
+
+        .image-card:hover img {
+            transform: scale(1.04);
+        }
+
+        .image-overlay {
+            position: absolute;
+            inset: auto 0 0;
+            padding: 25px 10px 10px;
+            background: linear-gradient(
+                transparent,
+                rgba(0, 0, 0, 0.8)
+            );
+            opacity: 0;
+            transition: 0.2s ease;
+        }
+
+        .image-card:hover .image-overlay {
+            opacity: 1;
+        }
+
+        .image-overlay a {
+            color: white;
+            font-size: 11px;
+            text-decoration: none;
+        }
+
+        .image-overlay a:hover {
+            color: var(--accent);
+        }
+
+        .no-images {
+            padding: 35px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        /* =====================================================
+           STATS
+           ===================================================== */
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .stat {
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface-2);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .stat-label {
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        /* =====================================================
+           FOOTER
+           ===================================================== */
+
+        footer {
+            padding: 30px 0 45px;
+            text-align: center;
+            color: #657069;
+            font-size: 12px;
+        }
+
+        /* =====================================================
+           MODAL
+           ===================================================== */
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 900px;
+            max-height: 90vh;
+        }
+
+        .modal-content img {
+            display: block;
+            max-width: 100%;
+            max-height: 85vh;
+            border-radius: 14px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: -45px;
+            right: 0;
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            background: var(--surface);
+            color: white;
+            font-size: 18px;
+        }
+
+        /* =====================================================
+           RESPONSIVE
+           ===================================================== */
+
+        @media (max-width: 1000px) {
+            .image-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 760px) {
+            .app {
+                width: min(100% - 24px, 680px);
+            }
+
+            header {
+                padding: 18px 0;
+            }
+
+            .hero {
+                padding: 50px 0 35px;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .card.full {
+                grid-column: auto;
+            }
+
+            .image-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .results-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .prompt-footer {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .generate-btn {
+                width: 100%;
+            }
+
+            .header-user {
+                gap: 7px;
+            }
+
+            .welcome-user {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .requirement-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .image-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .hero h1 {
+                font-size: 43px;
+            }
+
+            .auth-card {
+                padding: 25px 20px;
+            }
+
+            .auth-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="app">
+    <!-- =====================================================
+         LOGIN SCENE
+         ===================================================== -->
 
-```
-<!-- HEADER -->
-<header>
-    <div class="brand">
-        <div class="brand-mark">D</div>
-        <div class="brand-name">DesignForge</div>
-    </div>
-
-    <div class="status">
-        <span class="status-dot"></span>
-        <span>Backend online</span>
-    </div>
-</header>
-
-<!-- HERO -->
-<main>
-    <section class="hero">
-
-        <div class="eyebrow">
-            AI DESIGN RESEARCH
-        </div>
-
-        <h1>
-            Turn an idea into a
-            <span>design direction.</span>
-        </h1>
-
-        <p>
-            Describe what you want to create. DesignForge analyzes your
-            requirements, builds a research strategy, and finds visual
-            references that match your direction.
-        </p>
-
-    </section>
-
-    <!-- PROMPT -->
-    <section class="prompt-card">
-
-        <textarea
-            id="designPrompt"
-            placeholder="Describe the design you want to create..."
-            maxlength="5000"
-        ></textarea>
-
-        <div class="prompt-footer">
-            <span class="prompt-hint">
-                Press Ctrl + Enter to generate
-            </span>
-
-            <button
-                id="generateBtn"
-                class="generate-btn"
-                type="button"
-            >
-                <span>Generate</span>
-                <span>→</span>
-            </button>
-        </div>
-
-    </section>
-
-    <!-- EXAMPLES -->
-    <div class="examples">
-
-        <button
-            class="example-btn"
-            data-prompt="I want a gender-neutral fall jacket with an oversized silhouette, dark green and cream colours, utility pockets and beginner-friendly construction. Avoid visible logos and military styling."
-        >
-            Oversized utility jacket
-        </button>
-
-        <button
-            class="example-btn"
-            data-prompt="I want a minimalist everyday backpack with a black and cream colour palette, multiple practical compartments, a clean modern shape and beginner-friendly construction."
-        >
-            Minimal backpack
-        </button>
-
-        <button
-            class="example-btn"
-            data-prompt="I want a modern casual sneaker with a simple silhouette, neutral colours, comfortable construction and a clean streetwear aesthetic without visible branding."
-        >
-            Casual sneaker
-        </button>
-
-    </div>
-
-    <!-- LOADING -->
     <section
-        id="loading"
-        class="loading"
-        aria-live="polite"
-    >
-        <div class="spinner"></div>
-
-        <div class="loading-title">
-            Forging your design direction...
-        </div>
-
-        <div
-            id="loadingMessage"
-            class="loading-message"
-        >
-            Analyzing your requirements
-        </div>
-    </section>
-
-    <!-- ERROR -->
-    <section
-        id="errorBox"
-        class="error-box"
-        aria-live="assertive"
-    ></section>
-
-    <!-- RESULTS -->
-    <section
-        id="results"
-        class="results"
+        id="loginScene"
+        class="auth-scene active"
     >
 
-        <div class="results-header">
+        <div class="auth-wrapper">
 
-            <div>
-                <div class="card-label">
-                    Design Research
-                </div>
-
-                <h2>
-                    Your design direction
-                </h2>
-
-                <p>
-                    Extracted requirements and visual research.
-                </p>
+            <div class="auth-brand">
+                <div class="auth-brand-mark">D</div>
+                <div class="auth-brand-name">DesignForge</div>
             </div>
 
-            <button
-                id="newDesignBtn"
-                class="new-design-btn"
-                type="button"
-            >
-                + New design
-            </button>
+            <div class="auth-card">
+
+                <div class="auth-header">
+
+                    <div class="auth-label">
+                        AI DESIGN RESEARCH
+                    </div>
+
+                    <h1>Welcome back.</h1>
+
+                    <p>
+                        Sign in to continue to DesignForge.
+                    </p>
+
+                </div>
+
+                <form
+                    id="loginForm"
+                    class="auth-form"
+                >
+
+                    <div class="auth-field">
+
+                        <label for="loginUsername">
+                            Username
+                        </label>
+
+                        <input
+                            id="loginUsername"
+                            type="text"
+                            autocomplete="username"
+                            placeholder="Enter your username"
+                            maxlength="30"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="auth-field">
+
+                        <label for="loginPassword">
+                            Password
+                        </label>
+
+                        <input
+                            id="loginPassword"
+                            type="password"
+                            autocomplete="current-password"
+                            placeholder="Enter your password"
+                            maxlength="128"
+                            required
+                        >
+
+                    </div>
+
+                    <div
+                        id="loginMessage"
+                        class="auth-message"
+                        aria-live="polite"
+                    ></div>
+
+                    <div class="auth-actions">
+
+                        <!-- SIGN UP ON LEFT -->
+                        <button
+                            id="goToSignupBtn"
+                            class="auth-btn auth-btn-secondary"
+                            type="button"
+                        >
+                            Sign up
+                        </button>
+
+                        <!-- CONTINUE ON RIGHT -->
+                        <button
+                            id="loginBtn"
+                            class="auth-btn auth-btn-primary"
+                            type="submit"
+                        >
+                            Continue
+                        </button>
+
+                    </div>
+
+                </form>
+
+                <div class="auth-footer">
+                    DesignForge · AI-assisted design research
+                </div>
+
+            </div>
 
         </div>
 
-        <div class="dashboard">
+    </section>
 
-            <!-- REQUIREMENTS -->
-            <article class="card">
 
-                <div class="card-title">
-                    <h3>Design Requirements</h3>
+    <!-- =====================================================
+         SIGNUP SCENE
+         ===================================================== -->
 
-                    <span class="card-label">
-                        Input Analysis
-                    </span>
+    <section
+        id="signupScene"
+        class="auth-scene"
+    >
+
+        <div class="auth-wrapper">
+
+            <div class="auth-brand">
+                <div class="auth-brand-mark">D</div>
+                <div class="auth-brand-name">DesignForge</div>
+            </div>
+
+            <div class="auth-card">
+
+                <div class="auth-header">
+
+                    <div class="auth-label">
+                        CREATE ACCOUNT
+                    </div>
+
+                    <h1>Create your account.</h1>
+
+                    <p>
+                        Choose your DesignForge identity.
+                    </p>
+
                 </div>
 
-                <div
-                    id="requirements"
-                    class="requirement-grid"
-                ></div>
+                <form
+                    id="signupForm"
+                    class="auth-form"
+                >
 
-            </article>
+                    <div class="auth-field">
 
-            <!-- RESEARCH -->
-            <article class="card">
+                        <label for="signupName">
+                            Name
+                        </label>
 
-                <div class="card-title">
-                    <h3>Research Strategy</h3>
-
-                    <span class="card-label">
-                        Research Agent
-                    </span>
-                </div>
-
-                <div
-                    id="researchContent"
-                ></div>
-
-            </article>
-
-            <!-- IMAGES -->
-            <article class="card full">
-
-                <div class="card-title">
-
-                    <div>
-                        <h3>Visual References</h3>
-
-                        <div
-                            id="imageCountLabel"
-                            class="card-label"
+                        <input
+                            id="signupName"
+                            type="text"
+                            autocomplete="name"
+                            placeholder="Enter your name"
+                            maxlength="100"
+                            required
                         >
-                            0 references
-                        </div>
+
+                    </div>
+
+                    <div class="auth-field">
+
+                        <label for="signupUsername">
+                            Preferred username
+                        </label>
+
+                        <input
+                            id="signupUsername"
+                            type="text"
+                            autocomplete="username"
+                            placeholder="Choose a unique username"
+                            maxlength="30"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="auth-field">
+
+                        <label for="signupPassword">
+                            Password
+                        </label>
+
+                        <input
+                            id="signupPassword"
+                            type="password"
+                            autocomplete="new-password"
+                            placeholder="Create a password"
+                            maxlength="128"
+                            required
+                        >
+
+                    </div>
+
+                    <div
+                        id="signupMessage"
+                        class="auth-message"
+                        aria-live="polite"
+                    ></div>
+
+                    <div class="auth-actions">
+
+                        <!-- BACK ON LEFT -->
+                        <button
+                            id="backToLoginBtn"
+                            class="auth-btn auth-btn-secondary"
+                            type="button"
+                        >
+                            Back
+                        </button>
+
+                        <!-- CONTINUE ON RIGHT -->
+                        <button
+                            id="signupBtn"
+                            class="auth-btn auth-btn-primary"
+                            type="submit"
+                        >
+                            Continue
+                        </button>
+
+                    </div>
+
+                </form>
+
+                <div class="auth-footer">
+                    Your password is securely hashed before storage.
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         MAIN DESIGNFORGE APPLICATION
+         ===================================================== -->
+
+    <section
+        id="mainScene"
+        class="scene"
+    >
+
+        <div class="app">
+
+            <!-- HEADER -->
+            <header>
+
+                <div class="brand">
+
+                    <div class="brand-mark">
+                        D
+                    </div>
+
+                    <div class="brand-name">
+                        DesignForge
                     </div>
 
                 </div>
 
-                <div
-                    id="imageGrid"
-                    class="image-grid"
-                ></div>
+                <div class="header-user">
 
-            </article>
-
-            <!-- STATS -->
-            <article class="card full">
-
-                <div class="card-title">
-                    <h3>Pipeline Performance</h3>
-
-                    <span class="card-label">
-                        Runtime
+                    <span
+                        id="welcomeUser"
+                        class="welcome-user"
+                    >
                     </span>
+
+                    <button
+                        id="logoutBtn"
+                        class="logout-btn"
+                        type="button"
+                    >
+                        Log out
+                    </button>
+
+                    <div class="status">
+
+                        <span class="status-dot"></span>
+
+                        <span>
+                            Backend online
+                        </span>
+
+                    </div>
+
                 </div>
 
-                <div
-                    id="stats"
-                    class="stats"
-                ></div>
+            </header>
 
-            </article>
+
+            <main>
+
+                <!-- HERO -->
+                <section class="hero">
+
+                    <div class="eyebrow">
+                        AI DESIGN RESEARCH
+                    </div>
+
+                    <h1>
+                        Turn an idea into a
+                        <span>design direction.</span>
+                    </h1>
+
+                    <p>
+                        Describe what you want to create.
+                        DesignForge analyzes your requirements,
+                        builds a research strategy, and finds
+                        visual references that match your direction.
+                    </p>
+
+                </section>
+
+
+                <!-- PROMPT -->
+                <section class="prompt-card">
+
+                    <textarea
+                        id="designPrompt"
+                        placeholder="Describe the design you want to create..."
+                        maxlength="5000"
+                    ></textarea>
+
+                    <div class="prompt-footer">
+
+                        <span class="prompt-hint">
+                            Press Ctrl + Enter to generate
+                        </span>
+
+                        <button
+                            id="generateBtn"
+                            class="generate-btn"
+                            type="button"
+                        >
+                            <span>Generate</span>
+                            <span>→</span>
+                        </button>
+
+                    </div>
+
+                </section>
+
+
+                <!-- EXAMPLES -->
+                <div class="examples">
+
+                    <button
+                        class="example-btn"
+                        data-prompt="I want a gender-neutral fall jacket with an oversized silhouette, dark green and cream colours, utility pockets and beginner-friendly construction. Avoid visible logos and military styling."
+                    >
+                        Oversized utility jacket
+                    </button>
+
+                    <button
+                        class="example-btn"
+                        data-prompt="I want a minimalist everyday backpack with a black and cream colour palette, multiple practical compartments, a clean modern shape and beginner-friendly construction."
+                    >
+                        Minimal backpack
+                    </button>
+
+                    <button
+                        class="example-btn"
+                        data-prompt="I want a modern casual sneaker with a simple silhouette, neutral colours, comfortable construction and a clean streetwear aesthetic without visible branding."
+                    >
+                        Casual sneaker
+                    </button>
+
+                </div>
+
+
+                <!-- LOADING -->
+                <section
+                    id="loading"
+                    class="loading"
+                    aria-live="polite"
+                >
+
+                    <div class="spinner"></div>
+
+                    <div class="loading-title">
+                        Forging your design direction...
+                    </div>
+
+                    <div
+                        id="loadingMessage"
+                        class="loading-message"
+                    >
+                        Analyzing your requirements
+                    </div>
+
+                </section>
+
+
+                <!-- ERROR -->
+                <section
+                    id="errorBox"
+                    class="error-box"
+                    aria-live="assertive"
+                ></section>
+
+
+                <!-- RESULTS -->
+                <section
+                    id="results"
+                    class="results"
+                >
+
+                    <div class="results-header">
+
+                        <div>
+
+                            <div class="card-label">
+                                Design Research
+                            </div>
+
+                            <h2>
+                                Your design direction
+                            </h2>
+
+                            <p>
+                                Extracted requirements and visual research.
+                            </p>
+
+                        </div>
+
+                        <button
+                            id="newDesignBtn"
+                            class="new-design-btn"
+                            type="button"
+                        >
+                            + New design
+                        </button>
+
+                    </div>
+
+
+                    <div class="dashboard">
+
+                        <!-- REQUIREMENTS -->
+                        <article class="card">
+
+                            <div class="card-title">
+
+                                <h3>
+                                    Design Requirements
+                                </h3>
+
+                                <span class="card-label">
+                                    Input Analysis
+                                </span>
+
+                            </div>
+
+                            <div
+                                id="requirements"
+                                class="requirement-grid"
+                            ></div>
+
+                        </article>
+
+
+                        <!-- RESEARCH -->
+                        <article class="card">
+
+                            <div class="card-title">
+
+                                <h3>
+                                    Research Strategy
+                                </h3>
+
+                                <span class="card-label">
+                                    Research Agent
+                                </span>
+
+                            </div>
+
+                            <div
+                                id="researchContent"
+                            ></div>
+
+                        </article>
+
+
+                        <!-- IMAGES -->
+                        <article class="card full">
+
+                            <div class="card-title">
+
+                                <div>
+
+                                    <h3>
+                                        Visual References
+                                    </h3>
+
+                                    <div
+                                        id="imageCountLabel"
+                                        class="card-label"
+                                    >
+                                        0 references
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <div
+                                id="imageGrid"
+                                class="image-grid"
+                            ></div>
+
+                        </article>
+
+
+                        <!-- STATS -->
+                        <article class="card full">
+
+                            <div class="card-title">
+
+                                <h3>
+                                    Pipeline Performance
+                                </h3>
+
+                                <span class="card-label">
+                                    Runtime
+                                </span>
+
+                            </div>
+
+                            <div
+                                id="stats"
+                                class="stats"
+                            ></div>
+
+                        </article>
+
+                    </div>
+
+                </section>
+
+            </main>
+
+
+            <footer>
+                DesignForge · AI-assisted design research
+            </footer>
 
         </div>
 
     </section>
 
-</main>
 
-<footer>
-    DesignForge · AI-assisted design research
-</footer>
-```
+    <!-- =====================================================
+         IMAGE MODAL
+         ===================================================== -->
 
-</div>
-
-<!-- IMAGE MODAL -->
-
-<div
-    id="imageModal"
-    class="modal"
-    role="dialog"
-    aria-modal="true"
->
-    <div class="modal-content">
-
-```
-    <button
-        id="modalClose"
-        class="modal-close"
-        type="button"
-        aria-label="Close image"
-    >
-        ×
-    </button>
-
-    <img
-        id="modalImage"
-        src=""
-        alt="Design reference"
+    <div
+        id="imageModal"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
     >
 
-</div>
-```
+        <div class="modal-content">
 
-</div>
-<script src="/static/script.js"></script>
+            <button
+                id="modalClose"
+                class="modal-close"
+                type="button"
+                aria-label="Close image"
+            >
+                ×
+            </button>
+
+            <img
+                id="modalImage"
+                src=""
+                alt="Design reference"
+            >
+
+        </div>
+
+    </div>
+
+
+    <script src="/static/script.js"></script>
+
 </body>
 </html>
