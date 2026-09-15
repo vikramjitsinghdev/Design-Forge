@@ -16,11 +16,17 @@ class ResearchAgent:
     Responsibilities:
         1. Receive DesignRequirements from InputAgent.
         2. Use Ollama GPT 120B to create a ResearchPlan.
-        3. Send the ResearchPlan search queries to PexelsService.
-        4. Return the ResearchPlan + image references.
+        3. Send the ResearchPlan to PexelsService.
+        4. Receive raw and filtered image results.
+        5. Return the complete research results.
 
-    The Research Agent does NOT directly communicate with
-    the Pexels API. PexelsService handles all API communication.
+    The Research Agent does NOT:
+        - Directly communicate with the Pexels API.
+        - Filter images itself.
+        - Rank images.
+        - Analyze image pixels.
+        - Access the database.
+        - Search the web directly.
     """
 
     # ---------------------------------------------------------
@@ -29,7 +35,9 @@ class ResearchAgent:
 
     def __init__(self):
 
-        self.api_key = os.getenv("OLLAMA_API_KEY")
+        self.api_key = os.getenv(
+            "OLLAMA_API_KEY"
+        )
 
         self.base_url = os.getenv(
             "OLLAMA_URL",
@@ -46,7 +54,8 @@ class ResearchAgent:
                 "OLLAMA_API_KEY is missing from .env"
             )
 
-        # Pexels service
+        # PexelsService handles:
+        # Pexels API → FilterService
         self.pexels = PexelsService()
 
         self.headers = {
@@ -65,68 +74,180 @@ class ResearchAgent:
         Input:
             DesignRequirements dictionary from InputAgent.
 
+        Pipeline:
+
+            DesignRequirements
+                    ↓
+            ResearchPlan
+                    ↓
+            PexelsService
+                    ↓
+            Raw Images
+                    ↓
+            FilterService
+                    ↓
+            Filtered Images
+
         Output:
             {
                 "research_plan": {...},
-                "image_results": {...}
+                "image_results": {
+                    "raw_results": {...},
+                    "filtered_results": {...}
+                }
             }
         """
 
-        if not isinstance(design_requirements, dict):
+        if not isinstance(
+            design_requirements,
+            dict
+        ):
             raise TypeError(
                 "design_requirements must be a dictionary"
             )
 
-        # ---------------------------------------------
+        # -----------------------------------------------------
         # STEP 1
         # Generate Research Plan
-        # ---------------------------------------------
+        # -----------------------------------------------------
 
-        print("\n[ResearchAgent] Generating research plan...")
-
-        research_plan = self._generate_research_plan(
-            design_requirements
+        print(
+            "\n[ResearchAgent] "
+            "Generating research plan..."
         )
 
-        print("[ResearchAgent] Research plan generated.")
+        research_plan = (
+            self._generate_research_plan(
+                design_requirements
+            )
+        )
 
-        # ---------------------------------------------
+        print(
+            "[ResearchAgent] "
+            "Research plan generated."
+        )
+
+        # -----------------------------------------------------
         # STEP 2
-        # Send Research Plan to Pexels
-        # ---------------------------------------------
+        # Send Research Plan to PexelsService
+        # -----------------------------------------------------
 
-        print("\n[ResearchAgent] Sending queries to Pexels...")
+        print(
+            "\n[ResearchAgent] "
+            "Sending queries to Pexels..."
+        )
 
-        image_results = self.pexels.search_research_plan(
-            research_plan,
-            primary_per_query=4,
-            alternative_per_query=2,
-            max_results=20
+        image_results = (
+            self.pexels.search_research_plan(
+                research_plan,
+                primary_per_query=4,
+                alternative_per_query=2,
+                max_results=20
+            )
+        )
+
+        # -----------------------------------------------------
+        # STEP 3
+        # Validate PexelsService Response
+        # -----------------------------------------------------
+
+        if not isinstance(
+            image_results,
+            dict
+        ):
+            raise RuntimeError(
+                "PexelsService returned "
+                "an invalid response."
+            )
+
+        raw_results = image_results.get(
+            "raw_results"
+        )
+
+        filtered_results = image_results.get(
+            "filtered_results"
+        )
+
+        if not isinstance(
+            raw_results,
+            dict
+        ):
+            raise RuntimeError(
+                "PexelsService response is missing "
+                "'raw_results'."
+            )
+
+        if not isinstance(
+            filtered_results,
+            dict
+        ):
+            raise RuntimeError(
+                "PexelsService response is missing "
+                "'filtered_results'."
+            )
+
+        # -----------------------------------------------------
+        # STEP 4
+        # Display Pipeline Results
+        # -----------------------------------------------------
+
+        raw_count = raw_results.get(
+            "total_results",
+            0
+        )
+
+        filtered_count = filtered_results.get(
+            "total_after_filtering",
+            0
+        )
+
+        removed_count = filtered_results.get(
+            "total_removed",
+            0
         )
 
         print(
             f"[ResearchAgent] "
-            f"Retrieved {image_results['total_results']} images."
+            f"Retrieved {raw_count} raw images."
         )
 
-        # ---------------------------------------------
-        # STEP 3
-        # Combine Results
-        # ---------------------------------------------
+        print(
+            f"[ResearchAgent] "
+            f"After filtering: "
+            f"{filtered_count} images remain."
+        )
+
+        print(
+            f"[ResearchAgent] "
+            f"Removed: {removed_count} images."
+        )
+
+        # -----------------------------------------------------
+        # STEP 5
+        # Return Complete Results
+        # -----------------------------------------------------
 
         return {
             "research_plan": research_plan,
-            "image_results": image_results
+
+            "image_results": {
+                "raw_results": raw_results,
+                "filtered_results": filtered_results
+            }
         }
 
     # ---------------------------------------------------------
     # GENERATE RESEARCH PLAN
     # ---------------------------------------------------------
 
-    def _generate_research_plan(self, design_requirements):
+    def _generate_research_plan(
+        self,
+        design_requirements
+    ):
         """
-        Ask Ollama GPT 120B to convert DesignRequirements
-        into a structured ResearchPlan.
+        Ask Ollama GPT 120B to convert
+        DesignRequirements into a structured
+        ResearchPlan.
         """
 
         system_prompt = """
@@ -185,7 +306,10 @@ Return exactly this structure:
         user_prompt = f"""
 Create a research plan from these DesignRequirements:
 
-{json.dumps(design_requirements, indent=4)}
+{json.dumps(
+    design_requirements,
+    indent=4
+)}
 """
 
         payload = {
@@ -230,13 +354,17 @@ Create a research plan from these DesignRequirements:
                 f"Ollama Research Agent request failed: {e}"
             )
 
-        # ---------------------------------------------
-        # Extract model response
-        # ---------------------------------------------
+        # -----------------------------------------------------
+        # Extract Model Response
+        # -----------------------------------------------------
 
         try:
 
-            content = data["message"]["content"]
+            content = data[
+                "message"
+            ][
+                "content"
+            ]
 
         except (KeyError, TypeError):
 
@@ -244,13 +372,15 @@ Create a research plan from these DesignRequirements:
                 "Unexpected response format from Ollama."
             )
 
-        # ---------------------------------------------
+        # -----------------------------------------------------
         # Parse JSON
-        # ---------------------------------------------
+        # -----------------------------------------------------
 
         try:
 
-            research_plan = json.loads(content)
+            research_plan = json.loads(
+                content
+            )
 
         except json.JSONDecodeError:
 
@@ -258,9 +388,9 @@ Create a research plan from these DesignRequirements:
                 "Research Agent returned invalid JSON."
             )
 
-        # ---------------------------------------------
+        # -----------------------------------------------------
         # Validate Research Plan
-        # ---------------------------------------------
+        # -----------------------------------------------------
 
         self._validate_research_plan(
             research_plan
@@ -272,10 +402,13 @@ Create a research plan from these DesignRequirements:
     # VALIDATE RESEARCH PLAN
     # ---------------------------------------------------------
 
-    def _validate_research_plan(self, research_plan):
+    def _validate_research_plan(
+        self,
+        research_plan
+    ):
         """
-        Make sure the Research Agent returned all
-        required fields.
+        Make sure the Research Agent returned
+        all required ResearchPlan fields.
         """
 
         required_fields = [
@@ -290,11 +423,18 @@ Create a research plan from these DesignRequirements:
             "diversity_categories"
         ]
 
-        if not isinstance(research_plan, dict):
+        if not isinstance(
+            research_plan,
+            dict
+        ):
 
             raise ValueError(
                 "Research plan must be a dictionary."
             )
+
+        # -----------------------------------------------------
+        # Check Missing Fields
+        # -----------------------------------------------------
 
         missing_fields = [
             field
@@ -306,10 +446,15 @@ Create a research plan from these DesignRequirements:
 
             raise ValueError(
                 "Research plan is missing fields: "
-                + ", ".join(missing_fields)
+                + ", ".join(
+                    missing_fields
+                )
             )
 
-        # Fields that should contain lists
+        # -----------------------------------------------------
+        # Check List Fields
+        # -----------------------------------------------------
+
         list_fields = [
             "primary_search_queries",
             "alternative_search_queries",
@@ -329,13 +474,18 @@ Create a research plan from these DesignRequirements:
             ):
 
                 raise ValueError(
-                    f"Research plan field '{field}' "
-                    f"must be a list."
+                    f"Research plan field "
+                    f"'{field}' must be a list."
                 )
 
-        # Objective must be a string
+        # -----------------------------------------------------
+        # Check Research Objective
+        # -----------------------------------------------------
+
         if not isinstance(
-            research_plan["research_objective"],
+            research_plan[
+                "research_objective"
+            ],
             str
         ):
 
@@ -343,8 +493,13 @@ Create a research plan from these DesignRequirements:
                 "research_objective must be a string."
             )
 
-        # At least one search query is required
-        if not research_plan["primary_search_queries"]:
+        # -----------------------------------------------------
+        # At Least One Search Query
+        # -----------------------------------------------------
+
+        if not research_plan[
+            "primary_search_queries"
+        ]:
 
             raise ValueError(
                 "Research Agent did not generate "
@@ -355,14 +510,87 @@ Create a research plan from these DesignRequirements:
     # OPTIONAL: RESEARCH PLAN ONLY
     # ---------------------------------------------------------
 
-    def generate_research_plan(self, design_requirements):
+    def generate_research_plan(
+        self,
+        design_requirements
+    ):
         """
         Generate only the ResearchPlan.
 
-        Useful for testing the AI separately without
-        calling Pexels.
+        Useful for testing the Research Agent
+        without calling PexelsService.
         """
 
         return self._generate_research_plan(
             design_requirements
         )
+
+
+# -------------------------------------------------------------
+# OPTIONAL DIRECT TEST
+# -------------------------------------------------------------
+
+if __name__ == "__main__":
+
+    agent = ResearchAgent()
+
+    test_requirements = {
+        "category": "jacket",
+        "purpose": "daily wear",
+        "audience": "gender-neutral",
+        "style": [
+            "utility",
+            "minimal"
+        ],
+        "colors": [
+            "dark green",
+            "cream"
+        ],
+        "materials": [],
+        "silhouette": [
+            "oversized"
+        ],
+        "required_features": [
+            "utility pockets"
+        ],
+        "excluded_features": [
+            "visible logos",
+            "military styling"
+        ],
+        "historical_influences": [],
+        "functional_requirements": [
+            "beginner-friendly construction"
+        ],
+        "complexity": "beginner",
+        "manufacturing_method": None,
+        "preferred_direction": None,
+        "user_preferences": [
+            "gender-neutral",
+            "fall season"
+        ],
+        "special_constraints": [
+            "no visible logos",
+            "no military styling"
+        ],
+        "search_terms": [
+            "gender neutral oversized fall jacket",
+            "dark green cream utility jacket",
+            "beginner friendly jacket construction"
+        ],
+        "confidence": 0.97
+    }
+
+    result = agent.research(
+        test_requirements
+    )
+
+    print(
+        "\nRESEARCH AGENT RESULT"
+    )
+
+    print(
+        json.dumps(
+            result,
+            indent=4
+        )
+    )

@@ -1,4 +1,10 @@
+# Ignore virtual environment and environment variable files
 .venv/
 .env
 __pycache__/
 *.pyc
+
+# Ignore test files
+test_pexel.py
+test_research.py
+test_pipeline.py
