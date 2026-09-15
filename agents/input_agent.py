@@ -172,13 +172,15 @@ Examples:
 "beginner", "intermediate", "advanced".
 
 manufacturing_method:
-Known construction/manufacturing method.
-Examples:
-"sewing", "3D printing", "laser cutting".
+Only provide a manufacturing method if the user explicitly
+mentions one. Otherwise use null.
+
+Do NOT infer a manufacturing method from the category.
 
 preferred_direction:
-Whether the user wants familiar/similar references,
-experimental/unconventional references, or a balance.
+Only provide this if the user explicitly expresses a preference
+for familiar, similar, experimental, unconventional, or balanced
+design directions. Otherwise use null.
 
 user_preferences:
 Other preferences that could affect ranking.
