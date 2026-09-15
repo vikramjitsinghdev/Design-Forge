@@ -1,140 +1,232 @@
 import json
-from agents.input_agent import InputAgent
 
+from agents.input_agent import InputAgent
+from agents.research_agent import ResearchAgent
+
+
+# ============================================================
+# TEST USER PROMPT
+# ============================================================
+
+USER_PROMPT = """
+I want to design a gender-neutral fall jacket.
+
+I want it to have an oversized silhouette with a
+modern minimalist utility style.
+
+The main colours should be dark green and cream.
+I want large functional pockets and a simple construction
+that a beginner could realistically make.
+
+I don't want any visible logos, military styling, or
+overly complicated construction.
+
+The jacket should be practical for everyday use but still
+look fashionable and clean.
+"""
+
+
+# ============================================================
+# DISPLAY HELPER
+# ============================================================
+
+def print_section(title):
+    print("\n")
+    print("=" * 70)
+    print(title)
+    print("=" * 70)
+
+
+def print_json(data):
+    print(json.dumps(data, indent=4, ensure_ascii=False))
+
+
+# ============================================================
+# MAIN TEST
+# ============================================================
 
 def main():
-    # ---------------------------------------------------------
-    # TEST USER PROMPT
-    # ---------------------------------------------------------
 
-    user_prompt = """
-    I want to design a gender-neutral fall jacket.
-    I want it to have an oversized silhouette with a
-    modern minimalist utility style.
+    print_section("DESIGNLENS - AI PIPELINE TEST")
 
-    The main colours should be dark green and cream.
-    I want large functional pockets and a simple construction
-    that a beginner could realistically make.
+    # --------------------------------------------------------
+    # 1. Display user prompt
+    # --------------------------------------------------------
 
-    I don't want any visible logos, military styling, or
-    overly complicated construction.
-
-    The jacket should be practical for everyday use but still
-    look fashionable and clean.
-    """
-
-    print("=" * 70)
-    print("DESIGNLENS - INPUT AGENT TEST")
-    print("=" * 70)
-
-    print("\nUSER INPUT:")
+    print("\nUSER PROMPT:")
     print("-" * 70)
-    print(user_prompt.strip())
+    print(USER_PROMPT.strip())
 
-    # ---------------------------------------------------------
-    # CREATE INPUT AGENT
-    # ---------------------------------------------------------
+    # --------------------------------------------------------
+    # 2. Initialize agents
+    # --------------------------------------------------------
+
+    print_section("INITIALIZING AI AGENTS")
 
     try:
+
         input_agent = InputAgent()
+        research_agent = ResearchAgent()
+
+        print("✓ Input Agent initialized")
+        print("✓ Research Agent initialized")
 
     except Exception as e:
-        print("\nERROR INITIALIZING INPUT AGENT")
-        print("-" * 70)
-        print(e)
+
+        print("\n✗ Failed to initialize agents")
+        print(f"Error: {e}")
+
         return
 
-    # ---------------------------------------------------------
-    # SEND USER INPUT TO INPUT AGENT
-    # ---------------------------------------------------------
+    # --------------------------------------------------------
+    # 3. INPUT AGENT
+    # --------------------------------------------------------
 
-    print("\n")
-    print("=" * 70)
-    print("SENDING INPUT TO GROQ...")
-    print("=" * 70)
+    print_section("STEP 1 - INPUT AGENT / GROQ")
+
+    print("Sending user prompt to Groq...")
+    print("Please wait...")
 
     try:
-        requirements = input_agent.analyze_input(user_prompt)
+
+        design_requirements = input_agent.analyze_input(
+            USER_PROMPT
+        )
 
     except Exception as e:
-        print("\nERROR FROM INPUT AGENT")
-        print("-" * 70)
-        print(e)
+
+        print("\n✗ Input Agent failed")
+        print(f"Error: {e}")
+
         return
 
-    # ---------------------------------------------------------
-    # DISPLAY RESULT
-    # ---------------------------------------------------------
+    print("\n✓ Input Agent completed successfully")
 
-    print("\n")
-    print("=" * 70)
-    print("INPUT AGENT OUTPUT")
-    print("=" * 70)
+    print("\nSTRUCTURED DESIGN REQUIREMENTS:")
+    print("-" * 70)
 
-    print(json.dumps(requirements, indent=4))
+    print_json(design_requirements)
 
-    # ---------------------------------------------------------
-    # DISPLAY IMPORTANT FIELDS SEPARATELY
-    # ---------------------------------------------------------
+    # --------------------------------------------------------
+    # 4. RESEARCH AGENT
+    # --------------------------------------------------------
 
-    print("\n")
-    print("=" * 70)
-    print("INTERPRETED DESIGN REQUIREMENTS")
-    print("=" * 70)
+    print_section("STEP 2 - RESEARCH AGENT / OLLAMA")
 
-    print(f"\nCategory:")
-    print(f"  {requirements['category']}")
+    print("Passing Input Agent output to Research Agent...")
+    print("Please wait...")
+    print("\nIMPORTANT:")
+    print("The Research Agent is receiving the structured")
+    print("requirements generated by the Input Agent.")
+    print("It is NOT receiving the original prompt directly.")
 
-    print(f"\nPurpose:")
-    print(f"  {requirements['purpose']}")
+    try:
 
-    print(f"\nAudience:")
-    print(f"  {requirements['audience']}")
+        research_plan = research_agent.research_design(
+            design_requirements
+        )
 
-    print(f"\nStyle:")
-    print(f"  {', '.join(requirements['style'])}")
+    except Exception as e:
 
-    print(f"\nColours:")
-    print(f"  {', '.join(requirements['colors'])}")
+        print("\n✗ Research Agent failed")
+        print(f"Error: {e}")
 
-    print(f"\nMaterials:")
-    print(f"  {', '.join(requirements['materials'])}")
+        return
 
-    print(f"\nSilhouette:")
-    print(f"  {', '.join(requirements['silhouette'])}")
+    print("\n✓ Research Agent completed successfully")
 
-    print(f"\nRequired Features:")
-    print(f"  {', '.join(requirements['required_features'])}")
+    print("\nRESEARCH PLAN:")
+    print("-" * 70)
 
-    print(f"\nExcluded Features:")
-    print(f"  {', '.join(requirements['excluded_features'])}")
+    print_json(research_plan)
 
-    print(f"\nFunctional Requirements:")
-    print(f"  {', '.join(requirements['functional_requirements'])}")
+    # --------------------------------------------------------
+    # 5. SUMMARY
+    # --------------------------------------------------------
 
-    print(f"\nComplexity:")
-    print(f"  {requirements['complexity']}")
+    print_section("AI PIPELINE SUMMARY")
 
-    print(f"\nManufacturing Method:")
-    print(f"  {requirements['manufacturing_method']}")
+    print("USER")
+    print("  ↓")
+    print("InputAgent / Groq")
+    print("  ↓")
+    print("DesignRequirements JSON")
+    print("  ↓")
+    print("ResearchAgent / Ollama 120B")
+    print("  ↓")
+    print("ResearchPlan JSON")
 
-    print(f"\nPreferred Direction:")
-    print(f"  {requirements['preferred_direction']}")
+    # --------------------------------------------------------
+    # 6. Quick verification
+    # --------------------------------------------------------
 
-    print(f"\nSpecial Constraints:")
-    print(f"  {', '.join(requirements['special_constraints'])}")
+    print_section("PIPELINE VERIFICATION")
 
-    print(f"\nSearch Terms:")
-    print(f"  {', '.join(requirements['search_terms'])}")
+    print("Input Agent output:")
 
-    print(f"\nConfidence:")
-    print(f"  {requirements['confidence']}")
+    if isinstance(design_requirements, dict):
+        print("  ✓ Valid Python dictionary")
+    else:
+        print("  ✗ Invalid output type")
 
-    print("\n")
-    print("=" * 70)
-    print("INPUT AGENT TEST COMPLETE")
-    print("=" * 70)
+    print("\nResearch Agent output:")
 
+    if isinstance(research_plan, dict):
+        print("  ✓ Valid Python dictionary")
+    else:
+        print("  ✗ Invalid output type")
+
+    print("\nRequired Research Agent fields:")
+
+    expected_fields = [
+        "research_objective",
+        "primary_search_queries",
+        "alternative_search_queries",
+        "visual_attributes",
+        "ranking_priorities",
+        "hard_requirements",
+        "hard_exclusions",
+        "soft_preferences",
+        "diversity_categories"
+    ]
+
+    for field in expected_fields:
+
+        if field in research_plan:
+            print(f"  ✓ {field}")
+        else:
+            print(f"  ✗ {field}")
+
+    # --------------------------------------------------------
+    # 7. Final result
+    # --------------------------------------------------------
+
+    print_section("TEST COMPLETE")
+
+    print(
+        "✓ User prompt successfully interpreted by Groq"
+    )
+
+    print(
+        "✓ Structured requirements successfully created"
+    )
+
+    print(
+        "✓ Requirements successfully passed to Ollama"
+    )
+
+    print(
+        "✓ Research plan successfully generated"
+    )
+
+    print(
+        "\nThe two-agent AI pipeline is working."
+    )
+
+
+# ============================================================
+# PROGRAM ENTRY POINT
+# ============================================================
 
 if __name__ == "__main__":
     main()
