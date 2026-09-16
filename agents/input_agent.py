@@ -38,7 +38,7 @@ class InputAgent:
         # without modifying the code.
         self.model = os.getenv(
             "GROQ_INPUT_MODEL",
-            "llama-3.3-70b-versatile"
+            "openai/gpt-oss-20b"
         )
 
     def analyze_input(self, user_input: str) -> dict:
